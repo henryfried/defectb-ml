@@ -9,7 +9,7 @@ description = "Scaled dot-product self-attention network for tight-binding param
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Henry Fried", email = "henry-fried@hotmail.de" }]
-license = { file = "LICENCE" }
+license = { file = "LICENSE" }
 keywords = ["pytorch", "attention", "materials", "tight-binding"]
 classifiers = [
   "Development Status :: 1 - Planning",
@@ -31,9 +31,9 @@ dependencies = [
 dev = ["pytest>=7.0"]
 
 [project.urls]
-Homepage = "https://github.com/henryfried/defectb_ai"
-Repository = "https://github.com/henryfried/defectb_ai"
-Issues = "https://github.com/henryfried/defectb_ai/issues"
+Homepage = "https://github.com/henryfried/defectb-ml"
+Repository = "https://github.com/henryfried/defectb-ml"
+Issues = "https://github.com/henryfried/defectb-ml/issues"
 
 [tool.setuptools.packages.find]
 include = ["defectb_ai*"]
