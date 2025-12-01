@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "defectb_ai"
+version = "0.0.1"
+description = "Scaled dot-product self-attention network for tight-binding parameters from local density of states."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Henry Fried", email = "henry-fried@hotmail.de" }]
+license = { file = "LICENCE" }
+keywords = ["pytorch", "attention", "materials", "tight-binding"]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "torch>=2.0.0",
+  "pytorch-lightning>=2.1.0",
+  "numpy>=1.22",
+  "pandas>=1.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/henryfried/defectb_ai"
+Repository = "https://github.com/henryfried/defectb_ai"
+Issues = "https://github.com/henryfried/defectb_ai/issues"
+
+[tool.setuptools.packages.find]
+include = ["defectb_ai*"]
