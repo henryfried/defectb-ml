@@ -40,14 +40,17 @@ NUM_WORKERS = 1 #DEVICES
 #-----------------------------------------------------------------------------
 #				       1 gauss	
 #-----------------------------------------------------------------------------
-TRAIN_SET_NAME = f'c_dimer_nedos_400_tb'
-YOUR_DIRECTORY =  '.'
-START_DIR = f'{YOUR_DIRECTORY}/defectb_ai_project/defectb_ai/defectb_ai/tests/data_sets'
-TRAIN_SET = f"{START_DIR}/{TRAIN_SET_NAME}"
+from pathlib import Path
+
+TRAIN_SET_NAME = 'c_dimer_nedos_400_tb'
+BASE_DIR = Path(__file__).resolve().parent.parent  # defectb_ai/examples
+DATA_DIR = BASE_DIR / "data_sets"
+
+TRAIN_SET = str(DATA_DIR / TRAIN_SET_NAME)
 
 VERSION_NUM = 0
 MODEL = 'epoch=0-step=200.ckpt'
 TRAINED_MODEL_DIR = f'tb_logs/{TRAIN_SET_NAME}/version_{VERSION_NUM}/checkpoints/{MODEL}'
 
-PRED_DATA_DIR = f'{YOUR_DIRECTORY}/defectb_ai_project/defectb_ai/defectb_ai/tests/data_sets/c_dimer_nedos_400_dft.dat'
+PRED_DATA_DIR = str(DATA_DIR / "c_dimer_nedos_400_dft.dat")
 # PRED_DATA_DIR = f'{START_DIR}/hbn_data_sets/dft/c_n/c_n_ldos_num_{LDOS_NUM}_nedos_{NEDOS}.dat'

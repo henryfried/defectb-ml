@@ -3,3 +3,9 @@ dist/
 __pycache__/
 *.pyc
 .idea/
+defectb_ai/examples/**/tb_logs/
+defectb_ai/examples/**/checkpoints/
+defectb_ai/examples/**/__pycache__/
+defectb_ai/examples/**/*.ckpt
+defectb_ai/examples/**/*.pt
+defectb_ai/examples/**/lightning_logs 

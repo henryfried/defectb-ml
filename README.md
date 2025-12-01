@@ -9,24 +9,37 @@ a training pipeline, a data loading module, a neural network, and prediction han
 Datahandling is done in the data_loader directory.
 Neural network architectures are stored in the models directory.
 
-Requirements
-
-    NumPy: pip install numpy
-    Pandas: pip install pandas
-    PyTorch: pip install torch
-    PyTorch-Lightning: pip install pytorch-lightning
-    and dependencies.
-    Other Utilities: Custom utilities such as nearest-neighbor calculations and stencil writing (defined in util).
+Dependencies are declared in `pyproject.toml` and will be installed automatically (torch, pytorch-lightning, numpy, pandas).
 
 ## Installation
 
-    pip install .
+Use a Python 3.9+ environment (virtualenv/conda recommended).
+
+Standard install from the repo root:
+
+```bash
+python3 -m pip install .
+```
+
+For editable development with tests (includes pytest):
+
+```bash
+python3 -m pip install -e .[dev]
+```
+
+For TensorBoard logging support (used by the training scripts):
+
+```bash
+python3 -m pip install tensorboard
+```
 
 ## Tests
 
-    - run python train with desired parameters in the config_transf.py
-    - run predict to obtain parametes
+```bash
+python3 -m pytest
+```
 
+## Examples
 
-
-
+- Train: adjust hyperparameters in `defectb_ai/examples/conv_attention/config_transf.py`, then run the training script (e.g., `python defectb_ai/examples/conv_attention/train_Conv1DSelfAtten.py`).
+- Predict: load a checkpoint with the matching config and run the prediction script (e.g., `python defectb_ai/examples/conv_attention/pred_Conv1DSelfAtten.py`).
