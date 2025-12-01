@@ -1,4 +1,4 @@
-# Defectb_ai
+# DefecTB_ML
 
 
 This repository contains a scaled dot-product self-attention based neural network for training and prediction of
