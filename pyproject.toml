@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "defectb-ml"
+version = "0.0.1"
+description = "AI for defect tight-binding"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+  { name = "Henry Fried", email = "henry-fried@hotmail.de" }
+]
+license = { file = "LICENCE" }
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Operating System :: Unix",
+  "Operating System :: MacOS :: MacOS X",
+]
+dependencies = [
+  "numpy",
+  "pandas",
+  "torch",
+  "pytorch-lightning",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["defectb_ml*"]

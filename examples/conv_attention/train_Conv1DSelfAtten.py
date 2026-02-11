@@ -2,9 +2,9 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.profilers import PyTorchProfiler
-from defectb_ai.models.callbacks import LearningRatePrinter, MyPrintingCallback
-from defectb_ai.models.network import Conv1DSelfAtten
-from defectb_ai.data_loader.dataloader import DataModule
+from defectb_ml.models.callbacks import LearningRatePrinter, MyPrintingCallback
+from defectb_ml.models.network import Conv1DSelfAtten
+from defectb_ml.data_loader.dataloader import DataModule
 import config_transf as config
 from pytorch_lightning.callbacks import LearningRateMonitor  # , ModelSummary
 '''

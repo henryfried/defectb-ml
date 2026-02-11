@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader, random_split
 import pytorch_lightning as pl
-from defectb_ai.data_loader.mydataset import MyTBDataSet, MyDosDFTDataSet
+from defectb_ml.data_loader.mydataset import MyTBDataSet, MyDosDFTDataSet
 
 class DataModule(pl.LightningDataModule):
     """
