@@ -29,6 +29,12 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
+# Training outputs
+.tb_logs/
+tb_logs/
+lightning_logs/
+*.ckpt
+
 # Editors/OS
 .idea/
 .vscode/

@@ -6,160 +6,6 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 
 
-# Class implementing the Self-Attention mechanism used in the Transformer model
-class SelfAttention(nn.Module):
-    def __init__(self, input_dim, num_heads, head_dim):
-        """
-        Initialize the SelfAttention module.
-
-        Parameters:
-        - input_dim: The input feature size.
-        - num_heads: Number of attention heads in the multi-head attention mechanism.
-        - head_dim: The dimension of each attention head.
-
-        This module computes scaled dot-product attention:
-            Attention(Q, K, V) = softmax(Q * K^T / sqrt(d_k)) * V
-        where:
-            Q = Query, K = Key, V = Value.
-            The learnable parameters are linear transformations for Q, K, and V.
-        """
-        super(SelfAttention, self).__init__()
-
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.dim = input_dim
-
-        # Inner dimension is the product of the number of heads and the dimension of each head
-        inner_dim = num_heads * head_dim
-
-        # Linear transformations for queries, keys, and values
-        self.to_q = nn.Linear(input_dim, inner_dim, bias=False)
-        self.to_k = nn.Linear(input_dim, inner_dim, bias=False)
-        self.to_v = nn.Linear(input_dim, inner_dim, bias=False)
-
-        # Scaling factor for the attention scores (1 / sqrt(head_dim))
-        self.scale = head_dim ** -0.5
-
-        # Variable to hold the attention scores (for debugging/monitoring)
-        self.attn_scores = None
-
-    def forward(self, x):
-        """
-        Perform a forward pass through the SelfAttention module.
-
-        Parameters:
-        - x: Input tensor (batch_size, input_dim).
-
-        Returns:
-        - attn_output: The final attention-weighted output tensor.
-        """
-        batch_size, dim = x.size()
-        # Compute query, key, and value
-        # shape: [batch_size, num_heads, head_dim]
-        query = self.to_q(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
-        key = self.to_k(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
-        value = self.to_v(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
-
-        # Compute attention scores: Q * K^T / sqrt(head_dim)
-        scores = torch.matmul(query, key.transpose(-2, -1)) / self.scale
-
-        # Apply softmax to get attention weights
-        attn_weights = F.softmax(scores, dim=-1)
-        self.attn_scores = attn_weights
-
-        # Calculate attention output: attention_weights * V
-        attn_output = torch.matmul(attn_weights, value).contiguous()
-
-        # Flatten the output and return it
-        attn_output = attn_output.view(batch_size, -1)
-        return attn_output
-
-
-class Net(nn.Module):
-    def __init__(self, input_size: int, conv_layer: List[int], num_heads: int, head_dim: int, output_dims: List[int],
-                 target_size: int, dropout: float) -> None:
-        """
-        Initialize the network consisting of convolutional layers, attention mechanism, and multi-layer perceptron.
-
-        Parameters:
-        - input_size: The size of the input features.
-        - conv_layer: List containing parameters for the 1D convolution layer.
-        - num_heads: The number of attention heads in the SelfAttention mechanism.
-        - head_dim: The dimension of each attention head.
-        - output_dims: The dimensions for the fully connected layers.
-        - target_size: The size of the target/output layer.
-        - dropout: Dropout rate to prevent overfitting.
-        - train: A flag indicating whether the model is in training mode or not.
-        """
-        super().__init__()
-        self.dropout_rate = dropout
-        #self.training = train
-        layers: List[nn.Module] = []
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-
-        # Define a 1D convolutional layer
-        out_chan, kernel_size, stride, padding = conv_layer[0]
-        self.conv1D = nn.Conv1d(in_channels=1,
-                                out_channels=out_chan,
-                                kernel_size=kernel_size,
-                                stride=stride,
-                                padding=padding,
-                                padding_mode='reflect')
-
-        # Calculate the output dimension of the convolution layer
-        conv_out_dim = (input_size - kernel_size + 2 * padding) // stride + 1
-
-        # Define a max pooling layer, small kernel to keep the features of the input
-        pool_kernel_size = 4
-        pool_stride = 2
-        pool_padding = 0
-        self.pool = nn.MaxPool1d(pool_kernel_size, pool_stride, pool_padding)
-
-        # Calculate the output dimension after pooling
-        pool_out_dim = ((conv_out_dim - pool_kernel_size + 2 * pool_padding) // pool_stride + 1) * out_chan
-
-        # Define the attention layer
-        self.attention = SelfAttention(input_dim=pool_out_dim, num_heads=self.num_heads, head_dim=self.head_dim)
-
-        # Define the fully connected layers after attention
-        input_dim = num_heads * head_dim
-        for output_dim in output_dims:
-            layers.append(nn.Linear(input_dim, output_dim))
-            layers.append(nn.ReLU())
-            layers.append(nn.Dropout(self.dropout_rate))
-            input_dim = output_dim
-
-        # Output layer
-        layers.append(nn.Linear(input_dim, target_size))
-        self.layers = nn.Sequential(*layers)
-
-    def forward(self, data: torch.Tensor) -> torch.Tensor:
-        """
-        Perform a forward pass through the network.
-
-        Parameters:
-        - data: The input tensor (batch_size, input_size).
-
-        Returns:
-        - out: The output tensor after passing through convolution, attention, and MLP.
-        """
-        batch_size, _ = data.size()
-        # Apply 1D convolution
-        conv1D_out = self.conv1D(data.unsqueeze(1))
-
-        # Apply max pooling
-        pooled_out = self.pool(conv1D_out)
-
-        # Flatten the pooled output and pass through the attention mechanism
-        flattened_output = pooled_out.view(batch_size, -1)
-        attn_result = self.attention(flattened_output)
-
-        # Apply fully connected layers with dropout and ReLU activation
-        out = self.layers(attn_result)
-        out[:, 1] = nn.ReLU()(out[:, 1])
-        return out
-
 
 
 class Conv1DSelfAtten(pl.LightningModule):
@@ -272,3 +118,232 @@ class Conv1DSelfAtten(pl.LightningModule):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.dr)
         return [optimizer], [scheduler]
+    
+class Net(nn.Module):
+    def __init__(self, input_size: int, conv_layer: List[int], num_heads: int, head_dim: int, output_dims: List[int],
+                 target_size: int, dropout: float) -> None:
+        """
+        Initialize the network consisting of convolutional layers, attention mechanism, and multi-layer perceptron.
+
+        Parameters:
+        - input_size: The size of the input features.
+        - conv_layer: List containing parameters for the 1D convolution layer.
+        - num_heads: The number of attention heads in the SelfAttention mechanism.
+        - head_dim: The dimension of each attention head.
+        - output_dims: The dimensions for the fully connected layers.
+        - target_size: The size of the target/output layer.
+        - dropout: Dropout rate to prevent overfitting.
+        - train: A flag indicating whether the model is in training mode or not.
+        """
+        super().__init__()
+        self.dropout_rate = dropout
+        #self.training = train
+        layers: List[nn.Module] = []
+        self.num_heads = num_heads
+        self.head_dim = head_dim
+
+        # Define a 1D convolutional layer
+        out_chan, kernel_size, stride, padding = conv_layer[0]
+        self.conv1D = nn.Conv1d(in_channels=1,
+                                out_channels=out_chan,
+                                kernel_size=kernel_size,
+                                stride=stride,
+                                padding=padding,
+                                padding_mode='reflect')
+
+        # Calculate the output dimension of the convolution layer
+        conv_out_dim = (input_size - kernel_size + 2 * padding) // stride + 1
+
+        # Define a max pooling layer, small kernel to keep the features of the input
+        pool_kernel_size = 4
+        pool_stride = 2
+        pool_padding = 0
+        self.pool = nn.MaxPool1d(pool_kernel_size, pool_stride, pool_padding)
+
+        # Calculate the output dimension after pooling
+        pool_out_dim = ((conv_out_dim - pool_kernel_size + 2 * pool_padding) // pool_stride + 1) * out_chan
+        out_conv_1_dim = (input_size - kernel_size + 2 * padding) // stride + 1
+        # Define the attention layer
+        # self.attention = SelfAttentionWeights(input_dim=out_conv_1_dim, num_heads=self.num_heads, head_dim=self.head_dim) 
+       
+        # Define the fully connected layers after attention
+       
+        
+        self.attention = SelfAttention(
+            input_dim=1,
+            qk_dim=num_heads,              # 1 dim per head
+            v_dim=num_heads * head_dim,
+            num_heads=num_heads,
+            out_dim=1,
+            dropout=dropout,
+        )
+        out_atten = out_conv_1_dim
+        input_dim = out_atten  #SelfAttention
+         #input_dim = num_heads * head_dim  #SelfAttentionWeights
+        for output_dim in output_dims:
+            layers.append(nn.Linear(input_dim, output_dim))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(self.dropout_rate))
+            input_dim = output_dim
+
+        # Output layer
+        layers.append(nn.Linear(input_dim, target_size))
+        self.layers = nn.Sequential(*layers)
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
+        """
+        Perform a forward pass through the network.
+
+        Parameters:
+        - data: The input tensor (batch_size, input_size).
+
+        Returns:
+        - out: The output tensor after passing through convolution, attention, and MLP.
+        """
+        batch_size, _ = data.size()
+        # Apply 1D convolution
+        conv1D_out = self.conv1D(data.unsqueeze(1))
+
+        # Apply max pooling
+        # pooled_out = self.pool(conv1D_out)
+        pooled_out = conv1D_out.mean(dim=1)
+        # Flatten the pooled output and pass through the attention mechanism
+        # flattened_output = pooled_out.view(batch_size, -1)
+        # attn_result = self.attention(flattened_output)
+        attn_result = self.attention(pooled_out)
+
+        # Apply fully connected layers with dropout and ReLU activation
+        out = self.layers(attn_result)
+        out[:, 1] = nn.ReLU()(out[:, 1])
+        return out
+
+class SelfAttention(nn.Module):
+    """
+    Self-attention with asymmetric dimensions:
+    - Q/K dimension = qk_dim (default 1)
+    - V dimension   = v_dim (default 128)
+
+    Note:
+        qk_dim must be divisible by num_heads.
+        v_dim must be divisible by num_heads.
+        If qk_dim = 1, then num_heads must be 1.
+    """
+    def __init__(
+        self,
+        input_dim=1,
+        qk_dim=1,
+        v_dim=128,
+        num_heads=1,
+        out_dim=None,
+        dropout=0.0,
+        bias=True,
+    ):
+        super().__init__()
+
+        if qk_dim % num_heads != 0:
+            raise ValueError(f"qk_dim ({qk_dim}) must be divisible by num_heads ({num_heads}).")
+        if v_dim % num_heads != 0:
+            raise ValueError(f"v_dim ({v_dim}) must be divisible by num_heads ({num_heads}).")
+
+        self.out_dim = out_dim or input_dim
+
+        # Separate projections for asymmetric attention
+        self.proj_q = nn.Linear(input_dim, qk_dim, bias=bias)
+        self.proj_k = nn.Linear(input_dim, qk_dim, bias=bias)
+        self.proj_v = nn.Linear(input_dim, v_dim, bias=bias)
+
+        self.mha = nn.MultiheadAttention(
+            embed_dim=qk_dim,   # query dimension
+            num_heads=num_heads,
+            dropout=dropout,
+            bias=bias,
+            batch_first=True,
+            kdim=qk_dim,
+            vdim=v_dim,
+        )
+
+        # Output is in query space (qk_dim)
+        self.proj_out = nn.Linear(qk_dim, self.out_dim, bias=bias)
+
+    def forward(self, x, key_padding_mask=None, attn_mask=None):
+        """
+        x: (B, L) or (B, L, C)
+        key_padding_mask: (B, L) with True where positions are PAD
+        attn_mask: (L, L) or (B*num_heads, L, L)
+        """
+        if x.dim() == 2:
+            x = x.unsqueeze(-1)  # (B, L, 1)
+
+        q = self.proj_q(x)
+        k = self.proj_k(x)
+        v = self.proj_v(x)
+
+        h, _ = self.mha(
+            q, k, v,
+            key_padding_mask=key_padding_mask,
+            attn_mask=attn_mask,
+            need_weights=False,
+        )
+
+        y = self.proj_out(h)
+
+        return y.squeeze(-1) if y.shape[-1] == 1 else y
+    
+    
+
+class SelfAttentionWeights(nn.Module):
+    def __init__(self, input_dim, num_heads, head_dim):
+        """
+        Initialize the SelfAttention module that calculates self attention between Q and K of length head_dim.
+
+        Parameters:
+        - input_dim: The input feature size.
+        - num_heads: Number of attention heads in the multi-head attention mechanism.
+        - head_dim: The dimension of each attention head.
+        """
+        super(SelfAttentionWeights, self).__init__()
+
+        self.num_heads = num_heads
+        self.head_dim = head_dim
+        self.dim = input_dim
+
+        # Inner dimension is the product of the number of heads and the dimension of each head
+        inner_dim = num_heads * head_dim
+
+        # Linear transformations for queries, keys, and values
+        self.to_q = nn.Linear(input_dim, inner_dim, bias=False)
+        self.to_k = nn.Linear(input_dim, inner_dim, bias=False)
+        self.to_v = nn.Linear(input_dim, inner_dim, bias=False)
+
+        # Scaling factor for the attention scores (1 / sqrt(head_dim))
+        self.scale = head_dim ** -0.5
+
+        # Variable to hold the attention scores (for debugging/monitoring)
+        self.attn_scores = None
+
+    def forward(self, x):
+        """
+        Perform a forward pass through the SelfAttention module.
+
+        Parameters:
+        - x: Input tensor (batch_size, input_dim).
+
+        Returns:
+        - attn_output: The final attention-weighted output tensor.
+        """
+        batch_size, dim = x.size()
+ 
+        query = self.to_q(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
+        key = self.to_k(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
+        value = self.to_v(x).view(batch_size, self.num_heads, self.head_dim).unsqueeze(-1)
+
+        scores = torch.matmul(query, key.transpose(-2, -1)) / self.scale
+
+        attn_weights = F.softmax(scores, dim=-1)
+        self.attn_scores = attn_weights
+
+        attn_output = torch.matmul(attn_weights, value).contiguous()
+
+        # Flatten the output and return it
+        attn_output = attn_output.view(batch_size, -1)
+        return attn_output

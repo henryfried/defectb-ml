@@ -1,14 +1,16 @@
-# defectb-ml
+# DefecTB-ML
 
-defectb-ml provides a scaled dot-product self-attention network for predicting tight-binding parameters from projected density of states (PDOS). The repo includes data loaders, model definitions, and runnable training/prediction scripts.
+This repository contains a scaled dot-product self-attention based neural network for training and prediction of
+tight-binding parameters based on the projected density of states. The main components of the project include
+a training pipeline, a data loading module, a neural network, and prediction handling.
+
+## Project Structure
+Datahandling is done in the data_loader directory.
+Neural network architectures are stored in the models directory.
+
+Dependencies are declared in `pyproject.toml` and will be installed automatically (torch, pytorch-lightning, numpy, pandas).
 
 Package import name: `defectb_ml`.
-
-## Highlights
-- Self-attention architecture for tight-binding parameter regression.
-- Modular data loading in `defectb_ml/data_loader`.
-- Model definitions in `defectb_ml/models`.
-- Training and prediction scripts in `examples/conv_attention`.
 
 ## Installation
 
@@ -22,6 +24,12 @@ Requirements
 Install from source
 ```bash
 python -m pip install -e .
+```
+
+For TensorBoard logging support (used by the training scripts):
+
+```bash
+python3 -m pip install tensorboard
 ```
 
 ## Quickstart
